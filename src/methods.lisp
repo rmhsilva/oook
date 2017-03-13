@@ -14,10 +14,26 @@
   (error "Probably won't be implemented..."))
 
 
-(defun do-owns-many (inst func)
-  "Call `func' with each owns-many model and slot value in `inst'"
-  (loop for (model . slot) in (owns-many inst) do
-    (funcall func model (slot-value inst slot))))
+(defun update-timestamps (inst)
+  "Update the `created-at' and `last-modified' timestamps in `inst'"
+  (flet  ((update-ts (slot)
+            (setf (slot-value inst slot)
+                  (clsql:get-time))))
+    (if (and (slot-boundp inst 'created-at)
+             (null (slot-value inst 'created-at)))
+        (update-ts 'created-at))
+    (if (slot-boundp inst 'last-modified)
+        (update-ts 'last-modified))))
+
+
+(defmacro do-each-owns-many ((inst right value) &body body)
+  "For each model in the owns-many relation of `inst', execute `body' with the
+symbol `right' bound to the model type, and the symbol `value' bound to the
+current slot-value of the relation"
+  (let ((slot (gensym "slot")))
+    `(loop for (,right . ,slot) in (owns-many ,inst) do
+      (let ((,value (slot-value ,inst ,slot)))
+        ,@body))))
 
 
 (defun update-owns-many (inst right new)
@@ -43,16 +59,6 @@
       ;; Save all new, both ones that were there already, and the add-new
       (mapc #'save new))))
 
-(defun update-timestamps (inst)
-  "Update the `created-at' and `last-modified' timestamps in `inst'"
-  (flet  ((update-ts (slot)
-            (setf (slot-value inst slot)
-                  (clsql:get-time))))
-    (if (and (slot-boundp inst 'created-at)
-             (null (slot-value inst 'created-at)))
-        (update-ts 'created-at))
-    (if (slot-boundp inst 'last-modified)
-        (update-ts 'last-modified))))
 
 (defun save (inst)
   "Save `inst' and associated models"
@@ -69,20 +75,18 @@
                     (update-timestamps subinst)
                     (clsql:update-records-from-instance subinst))))
             (owns-one inst))
-    (do-owns-many inst (alexandria:curry #'update-owns-many inst))))
+    (do-each-owns-many (inst model new)
+      (update-owns-many inst model new))))
 
 
 (defun destroy (inst)
   "Delete `inst' and associated models"
   (clsql:with-transaction ()
-    (clsql:update-objects-joins (inst) :slots :all)
+    (clsql:update-objects-joins (list inst) :slots :all)
     (clsql:delete-instance-records inst)
     (mapcar #'(lambda (slot)
                 (when (slot-boundp inst slot)
-                  (let ((subinst (slot-value inst slot)))
-                    (update-timestamps subinst)
-                    (clsql:update-records-from-instance subinst))))
+                  (clsql:delete-instance-records (slot-value inst slot))))
             (owns-one inst))
-    (do-owns-many inst #'(lambda (model instances)
-                           (declare (ignore model))
-                           (mapcar #'clsql:delete-instance-records instances)))))
+    (do-each-owns-many (inst model instances)
+      (mapcar #'clsql:delete-instance-records instances))))

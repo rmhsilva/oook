@@ -40,10 +40,11 @@
                (t ,val))))))
 
 
+
 (defun search-like (model column &key like (singlep nil))
   "Search the DB for `model' using LIKE to match column. If `singlep' is t, only
 one result is returned"
-  (let* ((qry (util:s+ "%" like "%"))
+  (let* ((qry (concatenate 'string "%" like "%"))
          (results (clsql:select model
                     :where [like [slot-value model column] qry]
                     :limit (if singlep 1)
@@ -52,4 +53,13 @@ one result is returned"
         (car results)
         results)))
 
-;; (defun count (model))
+
+(defmacro def-enhanced-printer (type &key slot)
+  "Enhances `print-object' for `type', adding the `slot' attribute to it"
+  (alexandria:with-gensyms (inst stream name)
+    `(defmethod print-object ((,inst ,type) ,stream)
+       (let ((,name (if (slot-boundp ,inst ,slot)
+                        (slot-value ,inst ,slot)
+                        "-")))
+         (print-unreadable-object (,inst ,stream :type t)
+           (format ,stream "\"~A\"" ,name))))))

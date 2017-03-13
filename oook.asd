@@ -10,6 +10,7 @@
                  #:anaphora             ; WHhoooo anaphoraaaa
                  #:cl-inflector         ; Pluralise stuff
                  #:sqlite               ; SQLite DB lib
+                 #:jonathan             ; JSON
                  #:clsql                ; SQL ORM
                  )
 

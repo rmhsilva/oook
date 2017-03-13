@@ -8,10 +8,6 @@
 ;;
 ;; Helpers
 
-(defun sql-field (symbol)
-  "Make `symbol' suitable for SQL name"
-  (string-downcase (substitute #\_ #\- (symbol-name symbol))))
-
 ;; TODO pluralise
 ;; (defun sql-table-name (symbol)
 ;;   "Make `symbol' suitable for SQL table name"
@@ -58,15 +54,9 @@
                 :foreign-key ,foreign
                 :set ,set))))
 
+
 ;;
 ;; Main macro definition
-;; Example usage:
-(if nil
-    (defmodel test-model (:has-one has-forn :owns-one owns-forn :owns-many many-forn)
-      "A model for testing"
-      name
-      (amount :type integer)))
-
 
 (defmacro defmodel (model-name (&key
                                   (table nil)
@@ -106,9 +96,20 @@
         (join-fks
          :db-kind :virtual
          :reader join-fks
-         :documentation "Foreign keys for models in has-one and belongs-to"
          :initform ',(loop for right in (append has-one belongs-to)
                            collect (cons right (make-foreign-key right))))
+        (serialisable-fields
+         :db-kind :virtual
+         :reader serialisable-fields
+         :initform ',(append '(id created-at last-modified)
+                             (mapcar #'(lambda (slot)
+                                         (first (ensure-list slot)))
+                                     slot-forms)))
+        (serialisable-joins
+         :db-kind :virtual
+         :reader serialisable-joins
+         :initform ',(append has-one owns-one (mapcar #'symbol-plural-of
+                                                      owns-many)))
         (id
          :accessor id
          :type integer
@@ -154,12 +155,26 @@
        (:documentation ,doc))))
 
 
-(defmacro def-enhanced-printer (type &key slot)
-  "Enhances `print-object' for `type', adding the `slot' attribute to it"
-  (alexandria:with-gensyms (inst stream name)
-    `(defmethod print-object ((,inst ,type) ,stream)
-       (let ((,name (if (slot-boundp ,inst ,slot)
-                        (slot-value ,inst ,slot)
-                        "-")))
-         (print-unreadable-object (,inst ,stream :type t)
-           (format ,stream "\"~A\"" ,name))))))
+(defgeneric id (inst)
+  (:documentation "Read the `id' attribute"))
+
+(defgeneric serialisable-fields (inst)
+  (:documentation
+   "Return the slots in `inst' that will be included when `to-alist' is called"))
+
+(defgeneric serialisable-joins (inst))
+
+(defgeneric join-fks (inst)
+  (:documentation
+   "Return the foreign keys for models in has-one and belongs-to"))
+
+(defgeneric foreign-key (inst))
+
+(defgeneric owns-one (inst))
+
+(defgeneric owns-many (inst))
+
+(defgeneric created-at (inst))
+
+(defgeneric last-modified (inst))
+

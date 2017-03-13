@@ -4,38 +4,60 @@
 (defpackage :oook.utils
   (:use :cl)
   (:export
+   :def-enhanced-printer
+   :search-like))
+
+(defpackage :oook.serialise
+  (:documentation
+   "A set of serialisation utilities, including to/from alists, to json (using
+   jonathan)")
+  (:use :cl)
+  (:import-from :anaphora :aif :it)
+  (:import-from
+   :oook.utils
+   :sql-field)
+  (:import-from
+   :oook.macro
+   :serialisable-fields
+   :serialisable-joins
+   :owns-many)
+  (:export
+   :*serialisation-options*
+   :with-serialisation-options
    :from-alist
-   :search-like
    :to-alist))
 
-
 (defpackage :oook.macro
+  (:documentation
+   "Defines the `defmodel' macro, and the associated functions")
   (:use :cl)
   (:nicknames :macro)
-  (:import-from :cl-inflector :symbol-plural-of :symbol-singular-of)
   (:import-from :alexandria   :ensure-list      :make-keyword :compose)
+  (:import-from :cl-inflector :symbol-plural-of :symbol-singular-of)
   (:import-from :anaphora     :aif              :it)
+  (:import-from :oook.utils   :sql-field)
   (:export
    :*default-slot-type*
    :defmodel
-   :def-enhanced-printer
-   :foreign-key
-   :join-fks
-   :id
    :owns-one
    :owns-many
+   :foreign-key
+   :join-fks
+   :serialisable-fields
+   :serialisable-joins
+   :id
    :created-at
-   :last-modified
-   :make-foreign-key))
+   :last-modified))
 
 
 (defpackage :oook.methods
-  (:use :cl :oook.utils)
+  (:use :cl)
   (:import-from
    :oook.macro
    :id
    :created-at
    :last-modified
+   :join-fks
    :owns-one
    :owns-many
    :make-foreign-key)
@@ -50,14 +72,18 @@
   (:use :cl)
   (:import-from
    :oook.utils
-   :search-like
+   :def-enhanced-printer
+   :search-like)
+  (:import-from
+   :oook.serialise
+   :*serialisation-options*
+   :with-serialisation-options
    :to-alist
    :from-alist)
   (:import-from
    :oook.macro
    :*default-slot-type*
    :defmodel
-   :def-enhanced-printer
    :id
    :created-at
    :last-modified)
@@ -68,10 +94,12 @@
    :save
    :destroy)
   (:export
+   :*serialisation-options*
    :*default-slot-type*
    :defmodel
    :search-like
    :def-enhanced-printer
+   :with-serialisation-options
    :to-alist
    :from-alist
    :id
