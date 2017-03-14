@@ -24,6 +24,7 @@
   (:export
    :*serialisation-options*
    :with-serialisation-options
+   :pprint-model
    :from-alist
    :to-alist))
 
@@ -57,10 +58,10 @@
    :id
    :created-at
    :last-modified
+   :foreign-key
    :join-fks
    :owns-one
-   :owns-many
-   :make-foreign-key)
+   :owns-many)
   (:export
    :filter
    :find-by-id
@@ -79,6 +80,7 @@
    :*serialisation-options*
    :with-serialisation-options
    :to-alist
+   :pprint-model
    :from-alist)
   (:import-from
    :oook.macro
@@ -102,6 +104,7 @@
    :with-serialisation-options
    :to-alist
    :from-alist
+   :pprint-model
    :id
    :created-at
    :last-modified

@@ -14,16 +14,20 @@
   (error "Probably won't be implemented..."))
 
 
+;; FIXME there are edge cases here. There needs to be a way to determine whether
+;; an instance is new or already existed. Also, prevent users from arbitrarily
+;; setting the ID of an object and saving it..
 (defun update-timestamps (inst)
   "Update the `created-at' and `last-modified' timestamps in `inst'"
   (flet  ((update-ts (slot)
             (setf (slot-value inst slot)
                   (clsql:get-time))))
-    (if (and (slot-boundp inst 'created-at)
-             (null (slot-value inst 'created-at)))
-        (update-ts 'created-at))
-    (if (slot-boundp inst 'last-modified)
-        (update-ts 'last-modified))))
+    ;; id == null is currently the only indication that the instance is new..
+    (when (null (id inst))
+      (update-ts 'created-at)
+      ;; Ensure the old value won't be clobbered
+      (slot-makunbound inst 'created-at))
+    (update-ts 'last-modified)))
 
 
 (defmacro do-each-owns-many ((inst right value) &body body)
@@ -42,7 +46,7 @@ current slot-value of the relation"
            ;; False if either a or b is nil, or their IDs are unequal
            (and (id a) (id b) (= (id a) (id b)))))
     (let* ((left (type-of inst))
-           (left-fk (macro:foreign-key inst))
+           (left-fk (foreign-key inst))
            (old (clsql:select right
                   :where [= left-fk (id inst)]
                   :flatp t))

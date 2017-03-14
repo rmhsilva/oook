@@ -101,7 +101,7 @@
         (serialisable-fields
          :db-kind :virtual
          :reader serialisable-fields
-         :initform ',(append '(id created-at last-modified)
+         :initform ',(append (if timestamped '(id created-at last-modified))
                              (mapcar #'(lambda (slot)
                                          (first (ensure-list slot)))
                                      slot-forms)))
