@@ -46,47 +46,69 @@
       (mapcar #'get-assoc slots-to-include))))
 
 
+(defun get-slot-type (class slot)
+  "Get the type of `slot' in `class'"
+  (closer-mop:slot-definition-type
+   (find slot
+         (closer-mop:class-direct-slots (find-class class))
+         :key #'(lambda (s) (closer-mop:slot-definition-name s)))))
+
+
 ;; TODO: include a mapping of string names to classes to enable submodel
 ;; population here
-(defun from-alist (type alist &key include-joins)
-  "Create an instance of `type', given `alist' containing mapping of slots to
-values, in caveman2 parsed params format"
-  (let* ((inst (make-instance type))
-         (slots (serialisable-fields inst)) ; FIXME make this a keyword arg
-         (include-joins (or (getf *serialisation-options* :include-joins)
-                            include-joins)))
+(defun from-alist (class alist &key include-joins)
+  "Create an instance of `class', given `alist' containing mapping of slots to
+values, in caveman2 parsed params format."
+  (declare (optimize debug))
+  (let* ((inst (make-instance class))
+         (slots (macro:deserialisable-fields inst))
+         ;; TODO restrict slots...
+         (include-joins (and (getf *serialisation-options* :include-joins)
+                             include-joins)))
 
-    (labels ((get-initform (slot fn)
-               (list (alexandria:make-keyword slot)
-                     (funcall fn slot)))
-             (get-base-slot-value (slot)
-               (cdr (assoc (sql-field slot) alist :test #'string=)))
+    (labels ((get-initform (slot type)
+               (aif (if (eql type :join)
+                        (get-join-slot-value slot)
+                        (get-base-slot-value slot type))
+                    (cons slot it)))
+             (get-base-slot-value (slot type)
+               (aif (cdr (assoc (sql-field slot) alist :test #'string=))
+                    (oook.utils:parse-as-type it type)))
              (get-join-slot-value (slot)
                ;; hacky inverse alist lookup for owns-many class name:
                (let ((value (cdr (assoc (sql-field slot) alist :test #'string=)))
                      (owns-many-slots (owns-many inst)))
-                 (aif (position slot (mapcar #'cdr owns-many-slots))
-                      (mapcar (alexandria:curry #'from-alist
-                                                (car (nth it owns-many-slots)))
-                              value)
-                      (from-alist slot value)))))
+                 ;; Exclude slots that have no value in the alist
+                 (unless (null value)
+                   (aif (position slot (mapcar #'cdr owns-many-slots))
+                        (mapcar (alexandria:curry #'from-alist
+                                                  (car (nth it owns-many-slots)))
+                                value)
+                        ;; It's not in owns-many, value is a single thing
+                        (from-alist slot value))))))
 
       (let ((init-args
-              (append (mapcan #'(lambda (slot)
+              (append (mapcar #'(lambda (slot)
                                   ;; get the value of each 'base' slot
-                                  (get-initform slot #'get-base-slot-value))
+                                  (get-initform slot (get-slot-type class slot)))
                               slots)
                       (if include-joins
-                          (mapcan (lambda (slot)
+                          (mapcar (lambda (slot)
                                     ;; get the value of each 'join' slot
-                                    (get-initform slot #'get-join-slot-value))
+                                    (get-initform slot :join))
                                   (serialisable-joins inst))))))
-        (apply #'make-instance type init-args)))))
+        (print init-args)
+        ;; (apply #'make-instance class init-args)
+        (dolist (slot (remove-if #'null init-args) inst)
+          (setf (slot-value inst (car slot)) (cdr slot)))))))
+
+;;; FIXME: Issues with from-alist
+;;;
 
 
-;; jonathan doesn't do nested alists very well...
 
 ;;
+;; jonathan doesn't do nested alists very well...
 ;; Lets just define the to-json manually!
 
 (defmethod jonathan:%to-json ((inst clsql:standard-db-object))
@@ -114,18 +136,23 @@ values, in caveman2 parsed params format"
     (jonathan:write-key-value "mjd" (clsql:time-mjd time))))
 
 
-(defmethod pprint-model (inst &key (stream t) (slots nil) include-joins)
+;;
+;; Pretty printing! TODO shouldn't really be in here...
+
+(defun pprint-model (inst &key (stream t) (slots nil) include-joins)
   "Pretty print `inst'"
-  (let* ((include-joins (or (getf *serialisation-options* :include-joins)
-                            include-joins))
-         (slots (aif (getf *serialisation-options* :slots) it
-                     (append (serialisable-fields inst)
-                             (if include-joins
-                                 (serialisable-joins inst))))))
-    ;; TODO: nested models
-    (format stream
-            "[~A]~%~{~{ - ~A: ~A~%~}~}"
-            (type-of inst)
-            (loop for slot in slots
-                  when (slot-boundp inst slot)
-                    collect (list slot (slot-value inst slot))))))
+  (if (null inst)
+      (warn "`inst' given to `pprint-model' is null")
+      (let* ((include-joins (or (getf *serialisation-options* :include-joins)
+                                include-joins))
+             (slots (aif slots it
+                         (append (serialisable-fields inst)
+                                 (if include-joins
+                                     (serialisable-joins inst))))))
+        ;; TODO: nested models
+        (format stream
+                "[~A]~%~{~{ - ~A: ~A~%~}~}"
+                (type-of inst)
+                (loop for slot in slots
+                      when (slot-boundp inst slot)
+                        collect (list slot (slot-value inst slot)))))))

@@ -12,6 +12,8 @@
                  #:sqlite               ; SQLite DB lib
                  #:jonathan             ; JSON
                  #:clsql                ; SQL ORM
+                 #:parse-number         ; General number parsing
+                 #:closer-mop
                  )
 
   :serial       t

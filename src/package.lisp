@@ -3,7 +3,9 @@
 
 (defpackage :oook.utils
   (:use :cl)
+  (:import-from :parse-number :parse-number)
   (:export
+   :parse-as-type
    :def-enhanced-printer
    :search-like))
 
@@ -19,6 +21,7 @@
   (:import-from
    :oook.macro
    :serialisable-fields
+   :deserialisable-fields
    :serialisable-joins
    :owns-many)
   (:export
@@ -45,6 +48,7 @@
    :foreign-key
    :join-fks
    :serialisable-fields
+   :deserialisable-fields
    :serialisable-joins
    :id
    :created-at

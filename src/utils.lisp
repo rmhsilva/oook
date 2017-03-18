@@ -40,11 +40,53 @@
                (t ,val))))))
 
 
+;; TODO: reimpliment this with defgeneric and methods
+(defun parse-as-type (value type)
+  "Try to parse `type' from input `value'"
+  (flet ((coerce-to (type)
+           (alexandria:eswitch (type)
+             ('null (etypecase value
+                      (null nil)))
+             ('string (etypecase value
+                        (null nil)
+                        (string value)))
+             ('integer (etypecase value
+                         (null nil)
+                         (integer value)
+                         (string (if (> (length value) 0)
+                                     (parse-integer value)
+                                     nil))))
+             ('float (etypecase value
+                       (null nil)
+                       (float value)
+                       (string (if (> (length value) 0)
+                                   (float (parse-number value))
+                                   nil))))
+             ('boolean (etypecase value
+                         (null nil)
+                         (string (or (equal value "1")
+                                     (equal value "t")
+                                     (equal value "true")))
+                         (boolean value)
+                         (integer (/= 0 value))))
+             ('clsql:wall-time nil))))
 
-(defun search-like (model column &key like (singlep nil))
+    (if (listp type)
+        (progn (assert (or (eql (car type) 'and)
+                           (eql (car type) 'or)))
+               ;; TODO handle this properly
+               ;; (dolist (current type)
+               ;;   (handler-case (parse value type)))
+               (coerce-to (find-if-not #'(lambda (el) (member el '(or and null)))
+                                       type)))
+        (coerce-to type))))
+
+
+(defun search-like (model column &key like (singlep nil) (fmt "%~A%"))
   "Search the DB for `model' using LIKE to match column. If `singlep' is t, only
 one result is returned"
-  (let* ((qry (concatenate 'string "%" like "%"))
+  (assert (not (null like)))
+  (let* ((qry (format nil fmt like))
          (results (clsql:select model
                     :where [like [slot-value model column] qry]
                     :limit (if singlep 1)

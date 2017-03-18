@@ -31,8 +31,8 @@
           (list :accessor name))
       ,@(unless (getf args :type)
           (list :type *default-slot-type*))
-      ,@(unless (getf args :initform)
-          (list :initform nil))
+      ;; ,@(unless (getf args :initform)
+      ;;     (list :initform nil))
       ,@args)))
 
 
@@ -79,34 +79,53 @@
          (owns-many-map (loop for right in owns-many
                               collecting
                               (cons right (symbol-plural-of right))))
+         (join-fks (loop for right in (append has-one belongs-to)
+                         collect (cons right (make-foreign-key right))))
          (id-symbol (intern "ID")))
     `(clsql:def-view-class ,model-name ()
        ((foreign-key
          :db-kind :virtual
+         :allocation :class
          :reader foreign-key
          :initform ',(make-foreign-key model-name))
         (owns-one
          :db-kind :virtual
+         ;; :allocation :class
          :reader owns-one
          :initform ',owns-one)
         (owns-many
          :db-kind :virtual
+         ;; :allocation :class
          :reader owns-many
          :initform ',owns-many-map)
         (join-fks
          :db-kind :virtual
+         ;; :allocation :class
          :reader join-fks
-         :initform ',(loop for right in (append has-one belongs-to)
-                           collect (cons right (make-foreign-key right))))
+         :initform ',join-fks)
         (serialisable-fields
          :db-kind :virtual
+         ;; :allocation :class
          :reader serialisable-fields
-         :initform ',(append (if timestamped '(id created-at last-modified))
+         :initform ',(append '(id)
+                             (if timestamped '(created-at last-modified))
+                             (mapcar #'cdr join-fks)
+                             (mapcar #'(lambda (slot)
+                                         (first (ensure-list slot)))
+                                     slot-forms)))
+        ;; TODO: allow excluded slots
+        (deserialisable-fields
+         :db-kind :virtual
+         ;; :allocation :class
+         :reader deserialisable-fields
+         :initform ',(append '(id)
+                             (mapcar #'cdr join-fks)
                              (mapcar #'(lambda (slot)
                                          (first (ensure-list slot)))
                                      slot-forms)))
         (serialisable-joins
          :db-kind :virtual
+         ;; :allocation :class
          :reader serialisable-joins
          :initform ',(append has-one owns-one (mapcar #'symbol-plural-of
                                                       owns-many)))
@@ -119,12 +138,10 @@
         ,@(if timestamped
               `((created-at
                  :type clsql:wall-time
-                 :accessor created-at
-                 :initform nil)
+                 :accessor created-at)
                 (last-modified
                  :type clsql:wall-time
-                 :accessor last-modified
-                 :initform nil)))
+                 :accessor last-modified)))
         ,@(mapcar #'make-clsql-base-slot
                   slot-forms)
         ,@(mapcar (compose #'make-clsql-key-slot #'make-foreign-key)
