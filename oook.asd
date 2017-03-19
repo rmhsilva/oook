@@ -2,7 +2,7 @@
 
 (asdf:defsystem :oook
   :version      "0.1.0"
-  :description  "An ORM for Common Lisp"
+  :description  "Some magic on the shoulders of CLSQL"
   :author       "Ric da Silva <ric@rmhsilva.com>"
   :license      "MIT"
 
@@ -13,7 +13,7 @@
                  #:jonathan             ; JSON
                  #:clsql                ; SQL ORM
                  #:parse-number         ; General number parsing
-                 #:closer-mop
+                 #:closer-mop           ; MOP compat layer
                  )
 
   :serial       t
