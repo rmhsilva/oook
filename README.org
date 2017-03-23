@@ -1,0 +1,98 @@
+* OOOK!
+
+~OOOK~ is some Rails-esque /magic/ on top of the venerable ~CL-SQL~ package,
+which has been providing a solid SQL abstraction for years.
+
+The goal is to greatly decrease "standard" web application development time with
+the trade-off of slightly less flexiblity. With that in mind, some of the
+features include:
+- Clean "model" (table) definitions
+- Automatic handling of model associations (joins)
+- Serialisation / deserialisation of models for serving as JSON or building from
+  POST data
+
+
+** Overview
+
+Create your models with ~defmodel~:
+
+#+begin_src common-lisp
+(oook:defmodel post (:belongs-to user)
+  (date_published :type :timestamp)
+  title
+  content)
+
+(oook:defmodel user (:has-many spells)
+  name
+  (level :type :integer))
+#+end_src
+
+This creates two CLOS classes which model the "post" and "user" database tables,
+including the relationship between the two.
+
+*Note:* this really creates two ~CLSQL~ /view-classes/, using
+~clsql:def-view-class~, containing the specified slots and a number of
+additional slots for managing the joins.
+
+*** Create a new user:
+
+#+begin_src common-lisp
+(defvar wizzard
+  (make-instance 'user :name "Rincewind" :level 1))
+#+end_src
+
+Create a new post and add it to the user:
+
+#+begin_src common-lisp
+(push (posts wizzard) (make-instance 'post :title "On Staying Alive")))
+#+end_src
+
+Save the new user (and post) in the database:
+
+#+begin_src common-lisp
+(oook:save wizzard) ;; Will save both the user and his post
+#+end_src
+
+Find something, either by ID with the built in helper, or construct a ~CLSQL~
+statement for more complex queries (~OOOK~ provides a few other helpers, see the
+documentation).
+
+#+begin_src common-lisp
+(oook:find-by-id 'post 2)
+(clsql:select 'user)
+#+end_src
+
+** Models
+
+*** Overview
+
+Like another well known library, all tables are expected to have at least these
+three columns:
+- ~id~: A unique (for this model type) ID for the row (the table's primary key)
+- ~created-at~: Time of creation
+- ~last-modified~: Time of last modification
+
+These have historically been found to be useful in typical web applications. The
+~id~ field is always required, and will be an index into the table. The second
+two can be disabled by passing ~:timestamped nil~ to defmacro
+
+In addition, models you define will typically have a number of other fields,
+corresponding to columns in the table, and possibly a number of /associated
+models/.
+
+*** Associated models
+
+A model can be associated to other models in a number of ways.
+- belongs-to
+- has-one
+- owns-one
+- owns-many
+
+
+*** Create and Save
+
+Models are exactly as you would with ~CL-SQL~. The fun part is saving.
+
+~oook:save~ will save any associated models that /belong/ to the instance it is
+called with. New rows will be created as necessary.
+
