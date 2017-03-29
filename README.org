@@ -1,14 +1,14 @@
 * OOOK!
 
 ~OOOK~ is some Rails-esque /magic/ on top of the venerable ~CL-SQL~ package,
-which has been providing a solid SQL abstraction for years.
+which has been providing a solid SQL abstraction in Common Lisp for years.
 
-The goal is to greatly decrease "standard" web application development time with
-the trade-off of slightly less flexiblity. With that in mind, some of the
-features include:
-- Clean "model" (table) definitions
+The goal of ~OOOK~ is to greatly decrease "standard" web application development
+time with the trade-off of slightly less flexiblity. With that in mind, some of
+the features include:
+- Clean data "model" (table) definitions
 - Automatic handling of model associations (joins)
-- Serialisation / deserialisation of models for serving as JSON or building from
+- Serialisation / deserialisation of data for serving as JSON or building from
   POST data
 
 
