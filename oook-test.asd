@@ -16,3 +16,6 @@
 
   :perform (test-op (op system)
                     (uiop:symbol-call :2am :run)))
+
+;; TODO
+;; - https://github.com/DalekBaldwin/check-it

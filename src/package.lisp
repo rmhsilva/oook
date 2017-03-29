@@ -7,29 +7,8 @@
   (:export
    :parse-as-type
    :def-enhanced-printer
+   :sql-field
    :search-like))
-
-(defpackage :oook.serialise
-  (:documentation
-   "A set of serialisation utilities, including to/from alists, to json (using
-   jonathan)")
-  (:use :cl)
-  (:import-from :anaphora :aif :it)
-  (:import-from
-   :oook.utils
-   :sql-field)
-  (:import-from
-   :oook.macro
-   :serialisable-fields
-   :deserialisable-fields
-   :serialisable-joins
-   :owns-many)
-  (:export
-   :*serialisation-options*
-   :with-serialisation-options
-   :pprint-model
-   :from-alist
-   :to-alist))
 
 (defpackage :oook.macro
   (:documentation
@@ -53,6 +32,28 @@
    :id
    :created-at
    :last-modified))
+
+(defpackage :oook.serialise
+  (:documentation
+   "A set of serialisation utilities, including to/from alists, to json (using
+   jonathan)")
+  (:use :cl)
+  (:import-from :anaphora :aif :it)
+  (:import-from
+   :oook.utils
+   :sql-field)
+  (:import-from
+   :oook.macro
+   :serialisable-fields
+   :deserialisable-fields
+   :serialisable-joins
+   :owns-many)
+  (:export
+   :*serialisation-options*
+   :with-serialisation-options
+   :pprint-model
+   :from-alist
+   :to-alist))
 
 
 (defpackage :oook.methods
