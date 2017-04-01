@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-`OOOK` is some Rails-esque ORM /magic/ on top of the venerable `CL-SQL` package,
+`OOOK` is some Rails-esque ORM *magic* on top of the venerable `CL-SQL` package,
 which has been providing a solid SQL abstraction in Common Lisp for years.
 
 The goal of `OOOK` is to greatly decrease "standard" database-driven web
@@ -35,7 +35,7 @@ This creates two CLOS classes which model the "post" and "user" database tables,
 including the relationship between the two. The models have brief dostrings,
 custom slots (including types) and associations with other models.
 
-*Note:* this really creates two `CLSQL` /view-classes/, using
+*Note:* this really creates two `CLSQL` *view-classes*, using
 `clsql:def-view-class`, containing the specified slots and a number of
 additional slots for managing the joins.
 
@@ -84,8 +84,8 @@ These have historically been found to be useful in typical web applications. The
 two can be disabled by passing `:timestamped nil` to `defmodel`.
 
 In addition, models you define will typically have a number of other fields,
-corresponding to columns in the table, and possibly a number of /associated
-models/.
+corresponding to columns in the table, and possibly a number of *associated
+models*.
 
 ### Associated models
 
@@ -101,7 +101,7 @@ it is accessed).
 
 The fun part is saving.
 
-`oook:save` will save any associated models that /belong/ to the instance it is
+`oook:save` will save any associated models that *belong* to the instance it is
 called with. New rows will be created as necessary.
 
 #### has-one (FK in Left)
@@ -142,7 +142,7 @@ recipe <- step*)
 
 #### many-to-many (intersection table)
 
-*Not implemented yet*
+**Not implemented yet**
 
 Left references many instances of Right, and Right might be referenced by many
 instances of Left. (e.g. programmer <-> project, a programmer is part of many
