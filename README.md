@@ -149,5 +149,3 @@ instances of Left. (e.g. programmer <-> project, a programmer is part of many
 projects and a project has many programmers)
 
 Get: do not try to resolve the parent relation (circular dep)
-
-### Create and Save
