@@ -22,6 +22,7 @@
                   ((:file "package")
                    (:file "utils")
                    ;; (:file "errors")
+                   (:file "serialise")
                    (:file "methods")
                    (:file "macro")
                    )))
