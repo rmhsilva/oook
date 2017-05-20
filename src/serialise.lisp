@@ -54,14 +54,15 @@
          :key #'(lambda (s) (closer-mop:slot-definition-name s)))))
 
 
-;; TODO: include a mapping of string names to classes to enable submodel
-;; population here
+;; from-list TODO:
+;;
+;; - provide a mechanism to set specific slots only
+;; - handle missing slots (e.g. checkboxes don't POST anything)
 (defun from-alist (class alist &key include-joins)
   "Create an instance of `class', given `alist' containing mapping of slots to
 values, in caveman2 parsed params format."
   (let* ((inst (make-instance class))
          (slots (macro:deserialisable-fields inst))
-         ;; TODO restrict slots...
          (include-joins (and (getf *serialisation-options* :include-joins)
                              include-joins)))
 
@@ -99,7 +100,6 @@ values, in caveman2 parsed params format."
 
         (dolist (slot (remove-if #'null init-args) inst)
           (setf (slot-value inst (car slot)) (cdr slot)))))))
-
 
 
 ;;

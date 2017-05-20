@@ -66,6 +66,8 @@
                          (null nil)
                          (string (or (equal value "1")
                                      (equal value "t")
+                                     (equal value "on")
+                                     (equal value "yes")
                                      (equal value "true")))
                          (boolean value)
                          (integer (/= 0 value))))
