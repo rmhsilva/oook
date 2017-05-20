@@ -59,7 +59,6 @@
 (defun from-alist (class alist &key include-joins)
   "Create an instance of `class', given `alist' containing mapping of slots to
 values, in caveman2 parsed params format."
-  (declare (optimize debug))
   (let* ((inst (make-instance class))
          (slots (macro:deserialisable-fields inst))
          ;; TODO restrict slots...
@@ -97,13 +96,9 @@ values, in caveman2 parsed params format."
                                     ;; get the value of each 'join' slot
                                     (get-initform slot :join))
                                   (serialisable-joins inst))))))
-        (print init-args)
-        ;; (apply #'make-instance class init-args)
+
         (dolist (slot (remove-if #'null init-args) inst)
           (setf (slot-value inst (car slot)) (cdr slot)))))))
-
-;;; FIXME: Issues with from-alist
-;;;
 
 
 
