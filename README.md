@@ -2,8 +2,9 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-`OOOK` is some Rails-esque ORM *magic* on top of the venerable `CL-SQL` package,
-which has been providing a solid SQL abstraction in Common Lisp for years.
+`OOOK` is some data manipulation *magic* on top of the venerable `CL-SQL`
+package, which has been providing a solid SQL abstraction in Common Lisp for
+years.
 
 The goal of `OOOK` is to greatly decrease "standard" database-driven web
 application development time with the trade-off of slightly less flexiblity.
@@ -12,21 +13,24 @@ With that in mind, some of the features include:
 - Automatic handling of model associations (joins) during save / delete
 - Serialisation / deserialisation of data for serving as JSON or building from
   POST data
-- Straightforward migrations (in the future)
 
+*Note:* Database design should be driven by the **data**, not by the code that
+uses it! To encourage this, `OOOK` will never have functionality to manipulate
+the database schema.
 
 ## Overview
 
-Create models with `defmodel`:
+Create models of tables in the database with `defmodel`:
 
 ~~~common-lisp
 (oook:defmodel post (:belongs-to user)
+  "Some interesting prose, full of wisdom"
   (date_published :type :timestamp)
-  title
+  (title :column "post-title")
   content)
 
 (oook:defmodel user (:has-many posts)
-  "A user that writes posts"
+  "Someone who writes posts"
   name
   (level :type :integer :documentation "Skill level"))
 ~~~
@@ -35,13 +39,13 @@ This creates two CLOS classes which model the "post" and "user" database tables,
 including the relationship between the two. The models have brief dostrings,
 custom slots (including types) and associations with other models.
 
-*Note:* this really creates two `CLSQL` *view-classes*, using
+*Note:* the `defmodel` macro creates two `CLSQL` *view-classes*, using
 `clsql:def-view-class`, containing the specified slots and a number of
 additional slots for managing the joins.
 
 ### Example Workflow:
 
-Create a new user:
+Create a new user using the standard CLOS `make-instance`:
 
 ~~~common-lisp
 (defvar wizzard
