@@ -39,9 +39,8 @@
    jonathan)")
   (:use :cl)
   (:import-from :anaphora :aif :it)
-  (:import-from
-   :oook.utils
-   :sql-field)
+  (:import-from :oook.utils :sql-field)
+  (:import-from :spinneret :deftag)
   (:import-from
    :oook.macro
    :serialisable-fields

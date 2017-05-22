@@ -137,7 +137,9 @@ values, in caveman2 parsed params format."
 (defun pprint-model (inst &key (stream t) (slots nil) include-joins)
   "Pretty print `inst'"
   (if (null inst)
-      (warn "`inst' given to `pprint-model' is null")
+      (progn
+        (warn "`inst' given to `pprint-model' is null")
+        (format stream "NIL"))
       (let* ((include-joins (or (getf *serialisation-options* :include-joins)
                                 include-joins))
              (slots (aif slots it

@@ -9,11 +9,11 @@
   :depends-on   (#:alexandria           ; Utilities
                  #:anaphora             ; WHhoooo anaphoraaaa
                  #:cl-inflector         ; Pluralise stuff
-                 #:sqlite               ; SQLite DB lib
-                 #:jonathan             ; JSON
-                 #:clsql                ; SQL ORM
-                 #:parse-number         ; General number parsing
                  #:closer-mop           ; MOP compat layer
+                 #:clsql                ; SQL ORM
+                 #:jonathan             ; JSON
+                 #:parse-number         ; General number parsing
+                 #:spinneret            ; HTML generator
                  )
 
   :serial       t
@@ -21,8 +21,8 @@
                   :components
                   ((:file "package")
                    (:file "utils")
-                   ;; (:file "errors")
                    (:file "serialise")
+                   ;; (:file "html")
                    (:file "methods")
                    (:file "macro")
                    )))

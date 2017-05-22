@@ -99,6 +99,7 @@
          :reader owns-many
          :initform ',owns-many-map)
         (join-fks
+         :documentation "List of symbols for foreign key columns"
          :db-kind :virtual
          ;; :allocation :class
          :reader join-fks
