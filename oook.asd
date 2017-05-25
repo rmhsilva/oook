@@ -22,7 +22,7 @@
                   ((:file "package")
                    (:file "utils")
                    (:file "serialise")
-                   ;; (:file "html")
+                   (:file "html")
                    (:file "methods")
                    (:file "macro")
                    )))
