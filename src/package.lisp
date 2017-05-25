@@ -46,9 +46,13 @@
    :serialisable-fields
    :deserialisable-fields
    :serialisable-joins
+   :join-fks
    :owns-many)
   (:export
    :*serialisation-options*
+   :get-edit-form
+   :gen-html-table
+   :with-record-type
    :with-serialisation-options
    :pprint-model
    :from-alist

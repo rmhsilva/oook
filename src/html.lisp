@@ -2,9 +2,6 @@
 
 (in-package :oook.serialise)
 
-;; I want to do things like:
-;; (gen-html-table 'model records)
-
 (defun all-same-type-p (records)
   "Check everything in `records' is the same type"
   (let ((expected-type (type-of (first records))))
@@ -13,13 +10,18 @@
                               records))))
 
 
-(deftag ui/table (body attrs &key headings)
-  (let ((current (gensym "current")))
-    `(:table.ui.basic.table
+(deftag ui/table (rest attrs &key trs tds class)
+  (alexandria:with-gensyms (current current-row current-col)
+    `(:table.ui.table
+      :class ,class
       ,@attrs
-      (:thead (:tr (dolist (,current ,headings)
+      (:thead (:tr (dolist (,current ,trs)
                      (:th ,current))))
-      (:tbody ,@body))))
+      (:tbody
+       (dolist (,current-row ,tds)
+         (:tr (dolist (,current-col ,current-row)
+                (:td ,current-col))))
+       ,@rest))))
 
 (deftag ui/field (extra attrs &key label div-classes)
   "A form field"
@@ -28,14 +30,15 @@
     (:input ,@attrs)
     ,@extra))
 
-(deftag ui/checkbox (checked attrs &key label)
+(deftag ui/checkbox (extra attrs &key label value)
   "A checkbox"
   `(:div.ui.checkbox
     (:input.hidden :type "checkbox"
                    :name name
                    ,@attrs
-     :checked ,(if checked "checked" nil))
-    (:label ,label)))
+     :checked ,(if value "checked" nil))
+    (:label ,label)
+    ,@extra))
 
 
 ;;; Editing records
@@ -58,7 +61,7 @@
 (defun field-label-for (slot)
   (format nil "~:(~a~)" (substitute #\Space #\- (symbol-name slot))))
 
-(defun field-for (class slot &optional value)
+(defun field-for-normal-slot (class slot &optional value)
   (let* ((container-name (format nil "~(~a~)" (class-name (find-class class))))
          (label (field-label-for slot))
          (name (field-name-for container-name slot))
@@ -69,48 +72,56 @@
                   (:div.inline.field
                    (ui/checkbox :name name :label label :value value))))
       ('integer (ui/field :type "number" :name name :label label :value value))
+      ('float (ui/field :type "number" :name name :label label :value (coerce value 'single-float)))
+      ('number (ui/field :type "number" :name name :label label :value (coerce value 'single-float)))
       ('string (ui/field :type "text" :name name :label label :value value)))))
+
+;; (defun field-for-join-slot)
 
 
 (defmacro with-record-type ((class) &body body)
+  ;; let joined-slots ...
   `(flet ((field-for-slot (slot &optional value)
-            (field-for ,class slot value)))
+            ;; if slot-is-for-other-model
+            (field-for-normal-slot ,class slot value)))
      ,@body))
 
 ;; Test:
 ;; (with-record-type ('recipemaster.models:ingredient)
 ;;   (field-for-slot 'recipemaster.models:name)
-;;   (field-for-slot 'recipemaster.models:optimise))
+;;   (field-for-slot 'recipemaster.models:optimise t))
 
 
 (defun gen-html-table (records &key exclude-slots table-classes)
   "Print an HTML table listing the data in `records'"
   (let ((slots (set-difference (serialisable-fields (first records))
-                               exclude-slots))
-        (joined-tables (join-fks (first records))))
+                               exclude-slots)))
     ;; TODO this is icky, doesn't provide a nice restart
     (unless (all-same-type-p records)
       (error "Multiple types found in RECORDS"))
     (spinneret:with-html
-      (table :headings '()
-             (dolist (current record)
-               (with-slots slots current)
-               (td
-                ))))))
+      (ui/table
+        :trs (mapcar #'symbol-name slots)
+        :class table-classes
+        :tds (mapcar
+              (lambda (current-rec)
+                (loop for current-slot in slots
+                      collect (slot-value current-rec current-slot)))
+              records)))))
 
 
 (defun get-edit-form (record action &key exclude-slots)
   (let ((slots (set-difference (oook.macro:deserialisable-fields record)
                                (append exclude-slots
                                        '(oook.macro:id)))))
-    (print slots)
     (spinneret:with-html
       (with-record-type ((type-of record))
         (:form.ui.form
          :action action
          :method "POST"
          (dolist (current slots)
-           (field-for-slot current)))))))
+           (field-for-slot current (slot-value record current)))
+         (:button.ui.primary.button :type "submit" "Save"))))))
 
 ;; (get-edit-form (make-instance 'recipemaster.models:ingredient)
 ;;                "/save")
