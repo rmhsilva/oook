@@ -1,6 +1,6 @@
 # OOOK!
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Quicklisp](http://quickdocs.org/badge/oook.svg)](http://quickdocs.org/oook/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 `OOOK` is some data manipulation *magic* on top of the venerable `CL-SQL`
 package, which has been providing a solid SQL abstraction in Common Lisp for
@@ -11,12 +11,17 @@ application development time with the trade-off of slightly less flexiblity.
 With that in mind, some of the features include:
 - Clean data "model" (table) definitions
 - Automatic handling of model associations (joins) during save / delete
-- Serialisation / deserialisation of data for serving as JSON or building from
+- Serialisation / deserialisation of models for serving as JSON or building from
   POST data
+- HTML generation for data viewing (tables) and editing (forms)
 
 *Note:* Database design should be driven by the **data**, not by the code that
 uses it! To encourage this, `OOOK` will never have functionality to manipulate
 the database schema.
+
+**Also**, `OOOK` is still under development and the API is changing fairly
+frequently. It is regularly used in its present state, however, and is mostly
+stable.
 
 ## Overview
 
@@ -25,14 +30,14 @@ Create models of tables in the database with `defmodel`:
 ~~~common-lisp
 (oook:defmodel post (:belongs-to user)
   "Some interesting prose, full of wisdom"
-  (date_published :type :timestamp)
+  (date_published :type clsql:wall-time)
   (title :column "post-title")
   content)
 
 (oook:defmodel user (:has-many posts)
   "Someone who writes posts"
   name
-  (level :type :integer :documentation "Skill level"))
+  (level :type integer :documentation "Skill level"))
 ~~~
 
 This creates two CLOS classes which model the "post" and "user" database tables,
@@ -72,6 +77,81 @@ helpers, see the documentation).
 (oook:find-by-id 'post 2)  ; Find the post row with ID == 2
 (clsql:select 'user)  ; Select all users
 ~~~
+
+
+## POST/JSON serialisation
+
+`OOOK` makes it simple to build a model instance given a set of POST data, as
+long as the POST data is constructed according to a few rules. If you use the
+HTML generation helpers below, this is handled automatically!
+
+More documentation coming soon... But have a look at `serialise.lisp`!
+
+
+## HTML Generation
+
+OOOK provides some utilties for viewing and editing model data. In the simplest
+form, you can generate an HTML form to modify a model with a few lines:
+
+~~~common-lisp
+(let ((the-post (make-instance 'post :title "New Post")))
+  (oook:get-edit-form the-post "/save"))
+~~~
+
+With the previous definition of `post`, this returns the following HTML.
+
+~~~html
+<form class="ui form" action=/save method=POST>
+ <div class=field>
+  <label>Content</label>
+  <input type=text name=post[content]> 
+ </div>
+ <div class=field>
+  <label>Title</label>
+  <input type=text name=post[title] value="New Post"> 
+ </div>
+ <div class=field>
+  <label>Date_Published</label>
+  <input type=date name=post[date_published]> 
+ </div>
+ <div class=field>
+  <label>User Id</label>
+  <input type=number name=post[user_id]> 
+ </div>
+ <button class="ui primary button" type=submit>Save</button> 
+</form>
+~~~
+
+Things to note
+* An instance of `post` is passed in, and its values used to pre-populate the
+  form
+* The field names are compatible with the `OOOK` serialisation functions
+* This "quick" helper generates fairly minimal HTML - if you want something
+  fancier, use the other helpers below!
+  
+
+### Custom Built Forms
+
+`OOOK` provides a context manager, `with-record-type` to make it easier to build
+custom forms.
+
+Documentation coming soon... But have a look at `html.lisp`!
+
+
+## Utilities
+
+### Enhanced printing
+
+Use `oook:def-enhanced-printer` to quickly enhance the printed representations
+of models.
+
+~~~common_lisp
+CL-USER> (oook:def-enhanced-printer post :slot 'title)
+...
+CL-USER> (format t (oook:find-by-id 'post 5))
+#<POST "The Joys of Boredom">
+~~~
+
 
 ## Models Implementation Notes
 
@@ -153,3 +233,28 @@ instances of Left. (e.g. programmer <-> project, a programmer is part of many
 projects and a project has many programmers)
 
 Get: do not try to resolve the parent relation (circular dep)
+
+
+## LICENSE
+
+MIT License
+
+Copyright (c) 2017 Ricardo M. H. da Silva
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
