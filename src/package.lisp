@@ -87,6 +87,9 @@
    :oook.serialise
    :*serialisation-options*
    :with-serialisation-options
+   :get-edit-form
+   :gen-html-table
+   :with-record-type
    :to-alist
    :pprint-model
    :from-alist)
@@ -112,6 +115,9 @@
    :with-serialisation-options
    :to-alist
    :from-alist
+   :get-edit-form
+   :gen-html-table
+   :with-record-type
    :pprint-model
    :id
    :created-at

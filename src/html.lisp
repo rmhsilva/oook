@@ -10,36 +10,6 @@
                               records))))
 
 
-(deftag ui/table (rest attrs &key trs tds class)
-  (alexandria:with-gensyms (current current-row current-col)
-    `(:table.ui.table
-      :class ,class
-      ,@attrs
-      (:thead (:tr (dolist (,current ,trs)
-                     (:th ,current))))
-      (:tbody
-       (dolist (,current-row ,tds)
-         (:tr (dolist (,current-col ,current-row)
-                (:td ,current-col))))
-       ,@rest))))
-
-(deftag ui/field (extra attrs &key label div-classes)
-  "A form field"
-  `(:div.field :class ,div-classes
-    ,(if label `(:label ,label))
-    (:input ,@attrs)
-    ,@extra))
-
-(deftag ui/checkbox (extra attrs &key label value)
-  "A checkbox"
-  `(:div.ui.checkbox
-    (:input.hidden :type "checkbox"
-                   :name name
-                   ,@attrs
-     :checked ,(if value "checked" nil))
-    (:label ,label)
-    ,@extra))
-
 
 ;;; Editing records
 
@@ -70,11 +40,12 @@
       ;; TODO create more different fields depending on type
       ('boolean (spinneret:with-html
                   (:div.inline.field
-                   (ui/checkbox :name name :label label :value value))))
-      ('integer (ui/field :type "number" :name name :label label :value value))
-      ('float (ui/field :type "number" :name name :label label :value (coerce value 'single-float)))
-      ('number (ui/field :type "number" :name name :label label :value (coerce value 'single-float)))
-      ('string (ui/field :type "text" :name name :label label :value value)))))
+                   (ss:checkbox :name name :label label :value value))))
+      ('integer (ss:field :type "number" :name name :label label :value value))
+      ('clsql:wall-time (ss:field :type "date" :name name :label label :value value))
+      ('float (ss:field :type "number" :name name :label label :value (coerce value 'single-float)))
+      ('number (ss:field :type "number" :name name :label label :value (coerce value 'single-float)))
+      ('string (ss:field :type "text" :name name :label label :value value)))))
 
 ;; (defun field-for-join-slot)
 
@@ -92,6 +63,7 @@
 ;;   (field-for-slot 'recipemaster.models:optimise t))
 
 
+;; TODO: link to the edit page (route somehow) with the product ID
 (defun gen-html-table (records &key exclude-slots table-classes)
   "Print an HTML table listing the data in `records'"
   (let ((slots (set-difference (serialisable-fields (first records))
@@ -100,7 +72,7 @@
     (unless (all-same-type-p records)
       (error "Multiple types found in RECORDS"))
     (spinneret:with-html
-      (ui/table
+      (ss:table
         :trs (mapcar #'symbol-name slots)
         :class table-classes
         :tds (mapcar
@@ -119,8 +91,9 @@
         (:form.ui.form
          :action action
          :method "POST"
-         (dolist (current slots)
-           (field-for-slot current (slot-value record current)))
+         (dolist (current-slot slots)
+           (field-for-slot current-slot (when (slot-boundp record current-slot)
+                                          (slot-value record current-slot))))
          (:button.ui.primary.button :type "submit" "Save"))))))
 
 ;; (get-edit-form (make-instance 'recipemaster.models:ingredient)

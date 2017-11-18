@@ -1,7 +1,7 @@
 ;;;; OOOOOK!
 
 (asdf:defsystem :oook
-  :version      "0.1.0"
+  :version      "0.2.0"
   :description  "Some magic on the shoulders of CLSQL"
   :author       "Ric da Silva <ric@rmhsilva.com>"
   :license      "MIT"
@@ -13,6 +13,7 @@
                  #:clsql                ; SQL ORM
                  #:jonathan             ; JSON
                  #:parse-number         ; General number parsing
+                 #:semantic-spinneret   ; Semantic UI (ss)
                  #:spinneret            ; HTML generator
                  )
 
